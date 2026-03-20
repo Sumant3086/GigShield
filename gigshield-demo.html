@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GigShield — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --orange: #ff6b2b;
+    --orange-dim: rgba(255,107,43,0.12);
+    --orange-glow: rgba(255,107,43,0.35);
+    --white: #f0ede8;
+    --muted: #6b6875;
+    --border: rgba(255,255,255,0.07);
+    --slide-duration: 5000;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--white);
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* PROGRESS BAR */
+  #progress-bar {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    background: var(--orange);
+    z-index: 100;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 12px var(--orange-glow);
+  }
+
+  /* SLIDE COUNTER */
+  #counter {
+    position: fixed;
+    top: 24px; right: 32px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    z-index: 100;
+  }
+  #counter span { color: var(--orange); }
+
+  /* SLIDE ENGINE */
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1);
+  }
+  .slide.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .slide.exit {
+    opacity: 0;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0.4;
+  }
+
+  /* GRID BG */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  }
+
+  /* GLOW CIRCLE */
+  .glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+  }
+
+  /* SLIDE 1 — TITLE */
+  #s1 .inner {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  #s1 .tagline {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.7s 0.2s ease;
+  }
+  #s1 .title {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(64px, 10vw, 110px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.8s 0.4s ease;
+  }
+  #s1 .title em {
+    font-style: normal;
+    color: var(--orange);
+  }
+  #s1 .subtitle {
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--muted);
+    margin-top: 20px;
+    letter-spacing: 0.03em;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.7s 0.7s ease;
+  }
+  #s1 .badge {
+    display: inline-block;
+    margin-top: 36px;
+    padding: 8px 20px;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    opacity: 0;
+    transition: all 0.7s 1s ease;
+  }
+  #s1.active .tagline,
+  #s1.active .title,
+  #s1.active .subtitle,
+  #s1.active .badge {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SLIDE 2 — PROBLEM */
+  #s2 .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    max-width: 960px;
+    width: 90%;
+    position: relative;
+    z-index: 2;
+  }
+  #s2 .left .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.6s 0.2s ease;
+  }
+  #s2 .left h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.7s 0.4s ease;
+  }
+  #s2 .left p {
+    margin-top: 20px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--muted);
+    font-weight: 300;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.7s 0.6s ease;
+  }
+  #s2 .right {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    justify-content: center;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.6s ease;
+  }
+  .stat-card:nth-child(1) { transition-delay: 0.3s; }
+  .stat-card:nth-child(2) { transition-delay: 0.5s; }
+  .stat-card:nth-child(3) { transition-delay: 0.7s; }
+  .stat-card .num {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--orange);
+    line-height: 1;
+  }
+  .stat-card .desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-weight: 300;
+  }
+  #s2.active .left .label,
+  #s2.active .left h2,
+  #s2.active .left p,
+  #s2.active .stat-card {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* SLIDE 3 — SOLUTION */
+  #s3 .inner {
+    max-width: 900px;
+    width: 90%;
+    position: relative;
+    z-index: 2;
+    text-align: center;
+  }
+  #s3 .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    opacity: 0;
+    transition: all 0.6s 0.2s ease;
+  }
+  #s3 h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 52px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.7s 0.4s ease;
+  }
+  #s3 .pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 40px;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.7s 0.7s ease;
+  }
+  .pill {
+    padding: 10px 20px;
+    background: var(--orange-dim);
+    border: 1px solid rgba(255,107,43,0.25);
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--white);
+  }
+  #s3 .big-statement {
+    margin-top: 36px;
+    font-size: clamp(16px, 2vw, 20px);
+    line-height: 1.6;
+    color: var(--muted);
+    font-weight: 300;
+    opacity: 0;
+    transition: all 0.7s 1s ease;
+  }
+  #s3 .big-statement strong {
+    color: var(--white);
+    font-weight: 500;
+  }
+  #s3.active .label,
+  #s3.active h2,
+  #s3.active .pills,
+  #s3.active .big-statement {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SLIDE 4 — WORKFLOW */
+  #s4 .inner {
+    max-width: 1000px;
+    width: 90%;
+    position: relative;
+    z-index: 2;
+  }
+  #s4 .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: all 0.6s 0.2s ease;
+  }
+  #s4 h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 40px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.7s 0.35s ease;
+  }
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .flow-step {
+    flex: 1;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: all 0.5s ease;
+  }
+  .flow-step:nth-child(1) { transition-delay: 0.5s; }
+  .flow-step:nth-child(3) { transition-delay: 0.7s; }
+  .flow-step:nth-child(5) { transition-delay: 0.9s; }
+  .flow-step:nth-child(7) { transition-delay: 1.1s; }
+  .flow-step:nth-child(9) { transition-delay: 1.3s; }
+  .flow-arrow {
+    color: var(--orange);
+    font-size: 20px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: all 0.4s ease;
+  }
+  .flow-arrow:nth-child(2) { transition-delay: 0.6s; }
+  .flow-arrow:nth-child(4) { transition-delay: 0.8s; }
+  .flow-arrow:nth-child(6) { transition-delay: 1.0s; }
+  .flow-arrow:nth-child(8) { transition-delay: 1.2s; }
+  .flow-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 12px;
+  }
+  .flow-step.highlight .flow-icon {
+    background: var(--orange-dim);
+    border-color: rgba(255,107,43,0.4);
+  }
+  .flow-step .step-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .flow-step .step-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  #s4.active .label,
+  #s4.active h2,
+  #s4.active .flow-step,
+  #s4.active .flow-arrow {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SLIDE 5 — PREMIUM */
+  #s5 .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    max-width: 960px;
+    width: 90%;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+  #s5 .left .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: all 0.6s 0.2s ease;
+  }
+  #s5 .left h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(30px, 4vw, 46px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    opacity: 0;
+    transform: translateX(-15px);
+    transition: all 0.7s 0.4s ease;
+  }
+  #s5 .left p {
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-weight: 300;
+    opacity: 0;
+    transition: all 0.7s 0.6s ease;
+  }
+  .tier-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .tier {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.6s ease;
+  }
+  .tier:nth-child(1) { transition-delay: 0.4s; }
+  .tier:nth-child(2) {
+    transition-delay: 0.6s;
+    border-color: rgba(255,107,43,0.4);
+    background: var(--orange-dim);
+  }
+  .tier:nth-child(3) { transition-delay: 0.8s; }
+  .tier .tier-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .tier .tier-price {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--orange);
+  }
+  .tier .tier-payout {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  #s5.active .left .label,
+  #s5.active .left h2,
+  #s5.active .left p,
+  #s5.active .tier {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* SLIDE 6 — FRAUD */
+  #s6 .inner {
+    max-width: 960px;
+    width: 90%;
+    position: relative;
+    z-index: 2;
+  }
+  #s6 .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: all 0.6s 0.2s ease;
+  }
+  #s6 h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(28px, 4vw, 46px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 36px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.7s 0.35s ease;
+  }
+  .signals-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .signal {
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: all 0.5s ease;
+  }
+  .signal:nth-child(1) { transition-delay: 0.5s; }
+  .signal:nth-child(2) { transition-delay: 0.65s; }
+  .signal:nth-child(3) { transition-delay: 0.8s; }
+  .signal:nth-child(4) { transition-delay: 0.95s; }
+  .signal:nth-child(5) { transition-delay: 1.1s; }
+  .signal:nth-child(6) { transition-delay: 1.25s; }
+  .signal:nth-child(7) { transition-delay: 1.4s; }
+  .signal-icon { font-size: 20px; margin-bottom: 8px; }
+  .signal-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: 0.02em;
+  }
+  .bcs-bar {
+    margin-top: 24px;
+    opacity: 0;
+    transition: all 0.7s 1.5s ease;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .bcs-track {
+    flex: 1;
+    height: 8px;
+    background: var(--surface);
+    border-radius: 100px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .bcs-fill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #ff6b2b, #ff9a5c);
+    border-radius: 100px;
+    transition: width 1.5s 1.8s ease;
+  }
+  .bcs-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  #s6.active .label,
+  #s6.active h2,
+  #s6.active .signal,
+  #s6.active .bcs-bar {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #s6.active .bcs-fill { width: 72%; }
+
+  /* SLIDE 7 — TECH */
+  #s7 .layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    max-width: 960px;
+    width: 90%;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+  #s7 .left .label {
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--orange);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0;
+    transition: all 0.6s 0.2s ease;
+  }
+  #s7 .left h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(30px, 4vw, 46px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    opacity: 0;
+    transform: translateX(-15px);
+    transition: all 0.7s 0.4s ease;
+  }
+  .stack-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stack-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all 0.5s ease;
+  }
+  .stack-row:nth-child(1) { transition-delay: 0.3s; }
+  .stack-row:nth-child(2) { transition-delay: 0.45s; }
+  .stack-row:nth-child(3) { transition-delay: 0.6s; }
+  .stack-row:nth-child(4) { transition-delay: 0.75s; }
+  .stack-row:nth-child(5) { transition-delay: 0.9s; }
+  .stack-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex-shrink: 0;
+  }
+  .stack-tech {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+  }
+  .stack-role {
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+  #s7.active .left .label,
+  #s7.active .left h2,
+  #s7.active .stack-row {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* SLIDE 8 — END */
+  #s8 .inner {
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  #s8 .big {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(48px, 8vw, 96px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #s8 .big em {
+    font-style: normal;
+    color: var(--orange);
+  }
+  #s8 .tagline {
+    margin-top: 24px;
+    font-size: 18px;
+    color: var(--muted);
+    font-weight: 300;
+    opacity: 0;
+    transition: all 0.7s 0.7s ease;
+  }
+  #s8 .team {
+    margin-top: 40px;
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: all 0.7s 1s ease;
+  }
+  #s8 .team strong {
+    color: var(--orange);
+  }
+  #s8.active .big,
+  #s8.active .tagline,
+  #s8.active .team {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* NAV DOTS */
+  #dots {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+  }
+  .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .dot.active {
+    background: var(--orange);
+    width: 20px;
+    border-radius: 3px;
+    box-shadow: 0 0 8px var(--orange-glow);
+  }
+
+  /* CONTROLS */
+  #controls {
+    position: fixed;
+    bottom: 60px;
+    right: 32px;
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+  .btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }
+  .btn:hover {
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div id="counter">SLIDE <span id="cur">1</span> / 8</div>
+
+<!-- SLIDE 1 — TITLE -->
+<div class="slide active" id="s1">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:600px;height:600px;background:rgba(255,107,43,0.08);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="inner">
+    <div class="tagline">Guidewire DEVTrails 2026 · Team JOD</div>
+    <div class="title">Gig<em>Shield</em></div>
+    <div class="subtitle">AI-Powered Parametric Income Insurance<br>for E-Commerce Delivery Partners</div>
+    <div class="badge">Amazon Flex &nbsp;·&nbsp; Flipkart Quick &nbsp;·&nbsp; Last Mile</div>
+  </div>
+</div>
+
+<!-- SLIDE 2 — PROBLEM -->
+<div class="slide" id="s2">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);top:20%;left:10%"></div>
+  <div class="layout">
+    <div class="left">
+      <div class="label">The Problem</div>
+      <h2>Workers lose. Nobody pays.</h2>
+      <p>When floods hit, curfews are declared, or platforms shut down — India's 12 million delivery workers absorb the full income loss alone. No platform compensates them. No insurer serves them.</p>
+    </div>
+    <div class="right">
+      <div class="stat-card">
+        <div class="num">₹2,800</div>
+        <div class="desc">Lost by one worker in 4 flood days — zero recourse</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">20–30%</div>
+        <div class="desc">Monthly income lost during disruption events</div>
+      </div>
+      <div class="stat-card">
+        <div class="num">₹0</div>
+        <div class="desc">Compensation received from any platform or insurer</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3 — SOLUTION -->
+<div class="slide" id="s3">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:500px;height:500px;background:rgba(255,107,43,0.07);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="inner">
+    <div class="label">Our Solution</div>
+    <h2>Automatic protection.<br>Zero paperwork. Instant payout.</h2>
+    <div class="pills">
+      <div class="pill">Weekly Coverage from ₹29</div>
+      <div class="pill">AI Risk Pricing</div>
+      <div class="pill">Parametric Triggers</div>
+      <div class="pill">UPI Payout in &lt;2 Hours</div>
+      <div class="pill">No Claim Forms</div>
+      <div class="pill">Multi-Layer Fraud Defense</div>
+    </div>
+    <div class="big-statement">
+      When a disruption hits, GigShield detects it, validates it, and <strong>pays the worker automatically</strong> — before they even pick up their phone.
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4 — WORKFLOW -->
+<div class="slide" id="s4">
+  <div class="grid-bg"></div>
+  <div class="inner">
+    <div class="label">How It Works</div>
+    <h2>Five stages. Zero worker effort after signup.</h2>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">📋</div>
+        <div class="step-title">ENROLL</div>
+        <div class="step-desc">Phone OTP + zone + UPI link</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">🛡️</div>
+        <div class="step-title">COVER</div>
+        <div class="step-desc">Weekly policy activates Monday</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step highlight">
+        <div class="flow-icon">⚡</div>
+        <div class="step-title">DETECT</div>
+        <div class="step-desc">AI monitors zone triggers 24/7</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">✅</div>
+        <div class="step-title">VALIDATE</div>
+        <div class="step-desc">3+ sources cross-checked</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-icon">💸</div>
+        <div class="step-title">PAY</div>
+        <div class="step-desc">UPI payout under 2 hours</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 — PREMIUM -->
+<div class="slide" id="s5">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:350px;height:350px;background:rgba(255,107,43,0.07);bottom:0;right:10%"></div>
+  <div class="layout">
+    <div class="left">
+      <div class="label">Weekly Premium Model</div>
+      <h2>Priced for how workers actually live.</h2>
+      <p>Coverage activates every Monday, expires Sunday. AI adjusts your rate weekly based on zone risk, season, and claim history. Fully transparent before renewal.</p>
+    </div>
+    <div class="tier-cards">
+      <div class="tier">
+        <div>
+          <div class="tier-name">Basic Shield</div>
+          <div class="tier-payout">Up to ₹1,000 / week</div>
+        </div>
+        <div class="tier-price">₹29<span style="font-size:13px;color:var(--muted)">/wk</span></div>
+      </div>
+      <div class="tier">
+        <div>
+          <div class="tier-name">Standard Shield</div>
+          <div class="tier-payout">Up to ₹2,500 / week</div>
+        </div>
+        <div class="tier-price">₹59<span style="font-size:13px;color:var(--muted)">/wk</span></div>
+      </div>
+      <div class="tier">
+        <div>
+          <div class="tier-name">Pro Shield</div>
+          <div class="tier-payout">Up to ₹5,000 / week</div>
+        </div>
+        <div class="tier-price">₹99<span style="font-size:13px;color:var(--muted)">/wk</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 — FRAUD -->
+<div class="slide" id="s6">
+  <div class="grid-bg"></div>
+  <div class="inner">
+    <div class="label">Adversarial Defense</div>
+    <h2>Behavioral Coherence Score — 7 signals. One verdict.</h2>
+    <div class="signals-grid">
+      <div class="signal">
+        <div class="signal-icon">📱</div>
+        <div class="signal-name">Platform Session Activity</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">🗺️</div>
+        <div class="signal-name">Route Coherence</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">📡</div>
+        <div class="signal-name">Network Triangulation</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">📍</div>
+        <div class="signal-name">Historical Zone Presence</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">🔒</div>
+        <div class="signal-name">Device Integrity Check</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">🚦</div>
+        <div class="signal-name">Platform Halt Confirm</div>
+      </div>
+      <div class="signal">
+        <div class="signal-icon">📳</div>
+        <div class="signal-name">Accelerometer Consistency</div>
+      </div>
+    </div>
+    <div class="bcs-bar">
+      <div class="bcs-label">BCS Score</div>
+      <div class="bcs-track"><div class="bcs-fill"></div></div>
+      <div class="bcs-label" style="color:var(--orange)">72 / 100 — Auto Approved</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 — TECH STACK -->
+<div class="slide" id="s7">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);top:20%;right:5%"></div>
+  <div class="layout">
+    <div class="left">
+      <div class="label">Tech Stack</div>
+      <h2>Built to scale from day one.</h2>
+    </div>
+    <div class="stack-list">
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">Next.js 14 + Tailwind</div>
+        <div class="stack-role">Frontend PWA</div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">Node.js + Express</div>
+        <div class="stack-role">API Layer</div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">Python + FastAPI</div>
+        <div class="stack-role">ML Microservice</div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">Supabase + Firebase</div>
+        <div class="stack-role">DB + Auth + Realtime</div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">XGBoost + Isolation Forest</div>
+        <div class="stack-role">Risk + Fraud Models</div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-dot"></div>
+        <div class="stack-tech">Razorpay Test Mode</div>
+        <div class="stack-role">Payment Sandbox</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 — END -->
+<div class="slide" id="s8">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:700px;height:700px;background:rgba(255,107,43,0.09);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="inner">
+    <div class="big">Protecting<br>the <em>Last Mile.</em></div>
+    <div class="tagline">No forms. No calls. Just wages — when workers need them most.</div>
+    <div class="team">Team JOD &nbsp;·&nbsp; <strong>Sumant Yadav</strong> &nbsp;·&nbsp; <strong>Mausumi Ghadei</strong> &nbsp;·&nbsp; <strong>Sameer Mahato</strong></div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div id="dots"></div>
+<div id="controls">
+  <button class="btn" id="prev">‹</button>
+  <button class="btn" id="playBtn">⏸</button>
+  <button class="btn" id="next">›</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsEl = document.getElementById('dots');
+  const curEl = document.getElementById('cur');
+  const progressBar = document.getElementById('progress-bar');
+  const DURATIONS = [5000, 5500, 5000, 6000, 5500, 6500, 5000, 5000];
+
+  let current = 0;
+  let playing = true;
+  let timer = null;
+  let progressStart = null;
+  let progressRAF = null;
+
+  // Build dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    dotsEl.appendChild(d);
+  });
+
+  function getDots() { return document.querySelectorAll('.dot'); }
+
+  function goTo(idx) {
+    clearTimer();
+    slides[current].classList.remove('active');
+    slides[current].classList.add('exit');
+    setTimeout(() => slides[current - (current === idx ? 0 : 0)].classList.remove('exit'), 600);
+
+    const prev = current;
+    current = idx;
+
+    slides[prev].classList.remove('active');
+    setTimeout(() => slides[prev].classList.remove('exit'), 650);
+    slides[current].classList.add('active');
+
+    curEl.textContent = current + 1;
+    getDots().forEach((d, i) => d.classList.toggle('active', i === current));
+
+    if (playing) startTimer();
+  }
+
+  function next() { goTo((current + 1) % slides.length); }
+  function prev() { goTo((current - 1 + slides.length) % slides.length); }
+
+  function startTimer() {
+    clearTimer();
+    const dur = DURATIONS[current];
+    progressStart = performance.now();
+
+    function tick(now) {
+      const elapsed = now - progressStart;
+      const pct = Math.min((elapsed / dur) * 100, 100);
+      const totalPct = ((current / slides.length) + (pct / 100 / slides.length)) * 100;
+      progressBar.style.width = totalPct + '%';
+      if (elapsed < dur) {
+        progressRAF = requestAnimationFrame(tick);
+      }
+    }
+    progressRAF = requestAnimationFrame(tick);
+
+    timer = setTimeout(() => {
+      if (current < slides.length - 1) {
+        next();
+      } else {
+        progressBar.style.width = '100%';
+        playing = false;
+        document.getElementById('playBtn').textContent = '▶';
+      }
+    }, dur);
+  }
+
+  function clearTimer() {
+    clearTimeout(timer);
+    cancelAnimationFrame(progressRAF);
+  }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('playBtn').addEventListener('click', () => {
+    playing = !playing;
+    document.getElementById('playBtn').textContent = playing ? '⏸' : '▶';
+    if (playing) startTimer();
+    else clearTimer();
+  });
+
+  // Keyboard nav
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') next();
+    if (e.key === 'ArrowLeft') prev();
+  });
+
+  startTimer();
+</script>
+</body>
+</html>
