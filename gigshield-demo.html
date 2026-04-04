@@ -3,762 +3,270 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GigShield — Demo</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>GigShield — AI-Powered Parametric Income Insurance</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --orange: #ff6b2b;
-    --orange-dim: rgba(255,107,43,0.12);
-    --orange-glow: rgba(255,107,43,0.35);
-    --white: #f0ede8;
-    --muted: #6b6875;
-    --border: rgba(255,255,255,0.07);
-    --slide-duration: 5000;
-  }
-
-  html, body {
-    width: 100%; height: 100%;
-    background: var(--bg);
-    font-family: 'DM Sans', sans-serif;
-    color: var(--white);
-    overflow: hidden;
-    cursor: none;
-  }
-
-  /* PROGRESS BAR */
-  #progress-bar {
-    position: fixed;
-    top: 0; left: 0;
-    height: 3px;
-    background: var(--orange);
-    z-index: 100;
-    transition: width 0.1s linear;
-    box-shadow: 0 0 12px var(--orange-glow);
-  }
-
-  /* SLIDE COUNTER */
-  #counter {
-    position: fixed;
-    top: 24px; right: 32px;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    z-index: 100;
-  }
-  #counter span { color: var(--orange); }
-
-  /* SLIDE ENGINE */
-  .slide {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1);
-  }
-  .slide.active {
-    opacity: 1;
-    pointer-events: all;
-  }
-  .slide.exit {
-    opacity: 0;
-  }
-
-  /* NOISE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 200;
-    opacity: 0.4;
-  }
-
-  /* GRID BG */
-  .grid-bg {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 60px 60px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
-  }
-
-  /* GLOW CIRCLE */
-  .glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-  }
-
-  /* SLIDE 1 — TITLE */
-  #s1 .inner {
-    text-align: center;
-    position: relative;
-    z-index: 2;
-  }
-  #s1 .tagline {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 24px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.7s 0.2s ease;
-  }
-  #s1 .title {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(64px, 10vw, 110px);
-    font-weight: 800;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.8s 0.4s ease;
-  }
-  #s1 .title em {
-    font-style: normal;
-    color: var(--orange);
-  }
-  #s1 .subtitle {
-    font-size: 16px;
-    font-weight: 300;
-    color: var(--muted);
-    margin-top: 20px;
-    letter-spacing: 0.03em;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.7s 0.7s ease;
-  }
-  #s1 .badge {
-    display: inline-block;
-    margin-top: 36px;
-    padding: 8px 20px;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    opacity: 0;
-    transition: all 0.7s 1s ease;
-  }
-  #s1.active .tagline,
-  #s1.active .title,
-  #s1.active .subtitle,
-  #s1.active .badge {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* SLIDE 2 — PROBLEM */
-  #s2 .layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 80px;
-    max-width: 960px;
-    width: 90%;
-    position: relative;
-    z-index: 2;
-  }
-  #s2 .left .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: all 0.6s 0.2s ease;
-  }
-  #s2 .left h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(36px, 5vw, 56px);
-    font-weight: 800;
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: all 0.7s 0.4s ease;
-  }
-  #s2 .left p {
-    margin-top: 20px;
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--muted);
-    font-weight: 300;
-    opacity: 0;
-    transform: translateX(-20px);
-    transition: all 0.7s 0.6s ease;
-  }
-  #s2 .right {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    justify-content: center;
-  }
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px 24px;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: all 0.6s ease;
-  }
-  .stat-card:nth-child(1) { transition-delay: 0.3s; }
-  .stat-card:nth-child(2) { transition-delay: 0.5s; }
-  .stat-card:nth-child(3) { transition-delay: 0.7s; }
-  .stat-card .num {
-    font-family: 'Syne', sans-serif;
-    font-size: 36px;
-    font-weight: 800;
-    color: var(--orange);
-    line-height: 1;
-  }
-  .stat-card .desc {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 4px;
-    font-weight: 300;
-  }
-  #s2.active .left .label,
-  #s2.active .left h2,
-  #s2.active .left p,
-  #s2.active .stat-card {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  /* SLIDE 3 — SOLUTION */
-  #s3 .inner {
-    max-width: 900px;
-    width: 90%;
-    position: relative;
-    z-index: 2;
-    text-align: center;
-  }
-  #s3 .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 20px;
-    opacity: 0;
-    transition: all 0.6s 0.2s ease;
-  }
-  #s3 h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    opacity: 0;
-    transform: translateY(15px);
-    transition: all 0.7s 0.4s ease;
-  }
-  #s3 .pills {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 40px;
-    justify-content: center;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.7s 0.7s ease;
-  }
-  .pill {
-    padding: 10px 20px;
-    background: var(--orange-dim);
-    border: 1px solid rgba(255,107,43,0.25);
-    border-radius: 100px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--white);
-  }
-  #s3 .big-statement {
-    margin-top: 36px;
-    font-size: clamp(16px, 2vw, 20px);
-    line-height: 1.6;
-    color: var(--muted);
-    font-weight: 300;
-    opacity: 0;
-    transition: all 0.7s 1s ease;
-  }
-  #s3 .big-statement strong {
-    color: var(--white);
-    font-weight: 500;
-  }
-  #s3.active .label,
-  #s3.active h2,
-  #s3.active .pills,
-  #s3.active .big-statement {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* SLIDE 4 — WORKFLOW */
-  #s4 .inner {
-    max-width: 1000px;
-    width: 90%;
-    position: relative;
-    z-index: 2;
-  }
-  #s4 .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    opacity: 0;
-    transition: all 0.6s 0.2s ease;
-  }
-  #s4 h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(28px, 4vw, 44px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin-bottom: 40px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.7s 0.35s ease;
-  }
-  .flow {
-    display: flex;
-    align-items: center;
-    gap: 0;
-  }
-  .flow-step {
-    flex: 1;
-    text-align: center;
-    opacity: 0;
-    transform: translateY(16px);
-    transition: all 0.5s ease;
-  }
-  .flow-step:nth-child(1) { transition-delay: 0.5s; }
-  .flow-step:nth-child(3) { transition-delay: 0.7s; }
-  .flow-step:nth-child(5) { transition-delay: 0.9s; }
-  .flow-step:nth-child(7) { transition-delay: 1.1s; }
-  .flow-step:nth-child(9) { transition-delay: 1.3s; }
-  .flow-arrow {
-    color: var(--orange);
-    font-size: 20px;
-    flex-shrink: 0;
-    opacity: 0;
-    transition: all 0.4s ease;
-  }
-  .flow-arrow:nth-child(2) { transition-delay: 0.6s; }
-  .flow-arrow:nth-child(4) { transition-delay: 0.8s; }
-  .flow-arrow:nth-child(6) { transition-delay: 1.0s; }
-  .flow-arrow:nth-child(8) { transition-delay: 1.2s; }
-  .flow-icon {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    margin: 0 auto 12px;
-  }
-  .flow-step.highlight .flow-icon {
-    background: var(--orange-dim);
-    border-color: rgba(255,107,43,0.4);
-  }
-  .flow-step .step-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
-  }
-  .flow-step .step-desc {
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.4;
-  }
-  #s4.active .label,
-  #s4.active h2,
-  #s4.active .flow-step,
-  #s4.active .flow-arrow {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* SLIDE 5 — PREMIUM */
-  #s5 .layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    max-width: 960px;
-    width: 90%;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-  }
-  #s5 .left .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    opacity: 0;
-    transition: all 0.6s 0.2s ease;
-  }
-  #s5 .left h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(30px, 4vw, 46px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    opacity: 0;
-    transform: translateX(-15px);
-    transition: all 0.7s 0.4s ease;
-  }
-  #s5 .left p {
-    margin-top: 16px;
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.7;
-    font-weight: 300;
-    opacity: 0;
-    transition: all 0.7s 0.6s ease;
-  }
-  .tier-cards {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .tier {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: all 0.6s ease;
-  }
-  .tier:nth-child(1) { transition-delay: 0.4s; }
-  .tier:nth-child(2) {
-    transition-delay: 0.6s;
-    border-color: rgba(255,107,43,0.4);
-    background: var(--orange-dim);
-  }
-  .tier:nth-child(3) { transition-delay: 0.8s; }
-  .tier .tier-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-  }
-  .tier .tier-price {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--orange);
-  }
-  .tier .tier-payout {
-    font-size: 12px;
-    color: var(--muted);
-  }
-  #s5.active .left .label,
-  #s5.active .left h2,
-  #s5.active .left p,
-  #s5.active .tier {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  /* SLIDE 6 — FRAUD */
-  #s6 .inner {
-    max-width: 960px;
-    width: 90%;
-    position: relative;
-    z-index: 2;
-  }
-  #s6 .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    opacity: 0;
-    transition: all 0.6s 0.2s ease;
-  }
-  #s6 h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(28px, 4vw, 46px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    margin-bottom: 36px;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.7s 0.35s ease;
-  }
-  .signals-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  .signal {
-    padding: 16px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    opacity: 0;
-    transform: translateY(12px);
-    transition: all 0.5s ease;
-  }
-  .signal:nth-child(1) { transition-delay: 0.5s; }
-  .signal:nth-child(2) { transition-delay: 0.65s; }
-  .signal:nth-child(3) { transition-delay: 0.8s; }
-  .signal:nth-child(4) { transition-delay: 0.95s; }
-  .signal:nth-child(5) { transition-delay: 1.1s; }
-  .signal:nth-child(6) { transition-delay: 1.25s; }
-  .signal:nth-child(7) { transition-delay: 1.4s; }
-  .signal-icon { font-size: 20px; margin-bottom: 8px; }
-  .signal-name {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.3;
-    letter-spacing: 0.02em;
-  }
-  .bcs-bar {
-    margin-top: 24px;
-    opacity: 0;
-    transition: all 0.7s 1.5s ease;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-  .bcs-track {
-    flex: 1;
-    height: 8px;
-    background: var(--surface);
-    border-radius: 100px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-  }
-  .bcs-fill {
-    height: 100%;
-    width: 0;
-    background: linear-gradient(90deg, #ff6b2b, #ff9a5c);
-    border-radius: 100px;
-    transition: width 1.5s 1.8s ease;
-  }
-  .bcs-label {
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    color: var(--muted);
-    white-space: nowrap;
-  }
-  #s6.active .label,
-  #s6.active h2,
-  #s6.active .signal,
-  #s6.active .bcs-bar {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  #s6.active .bcs-fill { width: 72%; }
-
-  /* SLIDE 7 — TECH */
-  #s7 .layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 60px;
-    max-width: 960px;
-    width: 90%;
-    align-items: center;
-    position: relative;
-    z-index: 2;
-  }
-  #s7 .left .label {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    letter-spacing: 0.3em;
-    color: var(--orange);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    opacity: 0;
-    transition: all 0.6s 0.2s ease;
-  }
-  #s7 .left h2 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(30px, 4vw, 46px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    opacity: 0;
-    transform: translateX(-15px);
-    transition: all 0.7s 0.4s ease;
-  }
-  .stack-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .stack-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    opacity: 0;
-    transform: translateX(20px);
-    transition: all 0.5s ease;
-  }
-  .stack-row:nth-child(1) { transition-delay: 0.3s; }
-  .stack-row:nth-child(2) { transition-delay: 0.45s; }
-  .stack-row:nth-child(3) { transition-delay: 0.6s; }
-  .stack-row:nth-child(4) { transition-delay: 0.75s; }
-  .stack-row:nth-child(5) { transition-delay: 0.9s; }
-  .stack-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--orange);
-    flex-shrink: 0;
-  }
-  .stack-tech {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--white);
-  }
-  .stack-role {
-    font-size: 12px;
-    color: var(--muted);
-    margin-left: auto;
-  }
-  #s7.active .left .label,
-  #s7.active .left h2,
-  #s7.active .stack-row {
-    opacity: 1;
-    transform: translateX(0);
-  }
-
-  /* SLIDE 8 — END */
-  #s8 .inner {
-    text-align: center;
-    position: relative;
-    z-index: 2;
-  }
-  #s8 .big {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(48px, 8vw, 96px);
-    font-weight: 800;
-    line-height: 0.95;
-    letter-spacing: -0.03em;
-    opacity: 0;
-    transform: scale(0.95);
-    transition: all 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  #s8 .big em {
-    font-style: normal;
-    color: var(--orange);
-  }
-  #s8 .tagline {
-    margin-top: 24px;
-    font-size: 18px;
-    color: var(--muted);
-    font-weight: 300;
-    opacity: 0;
-    transition: all 0.7s 0.7s ease;
-  }
-  #s8 .team {
-    margin-top: 40px;
-    font-family: 'Syne', sans-serif;
-    font-size: 12px;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    opacity: 0;
-    transition: all 0.7s 1s ease;
-  }
-  #s8 .team strong {
-    color: var(--orange);
-  }
-  #s8.active .big,
-  #s8.active .tagline,
-  #s8.active .team {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  /* NAV DOTS */
-  #dots {
-    position: fixed;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 8px;
-    z-index: 100;
-  }
-  .dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--muted);
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  .dot.active {
-    background: var(--orange);
-    width: 20px;
-    border-radius: 3px;
-    box-shadow: 0 0 8px var(--orange-glow);
-  }
-
-  /* CONTROLS */
-  #controls {
-    position: fixed;
-    bottom: 60px;
-    right: 32px;
-    display: flex;
-    gap: 10px;
-    z-index: 100;
-  }
-  .btn {
-    width: 36px; height: 36px;
-    border-radius: 8px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-  }
-  .btn:hover {
-    border-color: var(--orange);
-    color: var(--orange);
-  }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --surface2: #16161f;
+  --orange: #ff6b2b;
+  --orange-dim: rgba(255,107,43,0.12);
+  --orange-glow: rgba(255,107,43,0.35);
+  --white: #f0ede8;
+  --muted: #6b6875;
+  --border: rgba(255,255,255,0.07);
+  --green: #22c55e;
+  --yellow: #eab308;
+  --red: #ef4444;
+}
+html, body { width:100%; height:100%; background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--white); overflow:hidden; cursor:none; }
+#progress-bar { position:fixed; top:0; left:0; height:3px; background:var(--orange); z-index:100; transition:width 0.1s linear; box-shadow:0 0 12px var(--orange-glow); }
+#counter { position:fixed; top:24px; right:32px; font-family:'Syne',sans-serif; font-size:11px; letter-spacing:0.15em; color:var(--muted); z-index:100; }
+#counter span { color:var(--orange); }
+.slide { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.6s cubic-bezier(0.4,0,0.2,1); }
+.slide.active { opacity:1; pointer-events:all; }
+.slide.exit { opacity:0; }
+body::before { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events:none; z-index:200; opacity:0.4; }
+.grid-bg { position:absolute; inset:0; background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size:60px 60px; mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black 30%,transparent 100%); }
+.glow { position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none; }
+.label { font-family:'Syne',sans-serif; font-size:11px; letter-spacing:0.3em; color:var(--orange); text-transform:uppercase; margin-bottom:16px; }
 </style>
+
+<style>
+/* ── SLIDE 1 TITLE ── */
+#s1 .inner { text-align:center; position:relative; z-index:2; }
+#s1 .tagline { font-family:'Syne',sans-serif; font-size:11px; letter-spacing:0.3em; color:var(--orange); text-transform:uppercase; margin-bottom:24px; opacity:0; transform:translateY(10px); transition:all 0.7s 0.2s ease; }
+#s1 .title { font-family:'Syne',sans-serif; font-size:clamp(64px,10vw,110px); font-weight:800; line-height:0.95; letter-spacing:-0.03em; opacity:0; transform:translateY(20px); transition:all 0.8s 0.4s ease; }
+#s1 .title em { font-style:normal; color:var(--orange); }
+#s1 .subtitle { font-size:16px; font-weight:300; color:var(--muted); margin-top:20px; letter-spacing:0.03em; opacity:0; transform:translateY(10px); transition:all 0.7s 0.7s ease; }
+#s1 .badge { display:inline-block; margin-top:36px; padding:8px 20px; border:1px solid var(--border); border-radius:100px; font-size:11px; letter-spacing:0.15em; color:var(--muted); opacity:0; transition:all 0.7s 1s ease; }
+#s1.active .tagline,#s1.active .title,#s1.active .subtitle,#s1.active .badge { opacity:1; transform:translateY(0); }
+
+/* ── SLIDE 2 PROBLEM ── */
+#s2 .layout { display:grid; grid-template-columns:1fr 1fr; gap:80px; max-width:960px; width:90%; position:relative; z-index:2; }
+#s2 .left .label,#s2 .left h2,#s2 .left p { opacity:0; transform:translateX(-20px); transition:all 0.7s ease; }
+#s2 .left .label { transition-delay:0.2s; }
+#s2 .left h2 { font-family:'Syne',sans-serif; font-size:clamp(36px,5vw,56px); font-weight:800; line-height:1.05; letter-spacing:-0.02em; transition-delay:0.4s; }
+#s2 .left p { margin-top:20px; font-size:15px; line-height:1.7; color:var(--muted); font-weight:300; transition-delay:0.6s; }
+#s2 .right { display:flex; flex-direction:column; gap:16px; justify-content:center; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px 24px; opacity:0; transform:translateX(20px); transition:all 0.6s ease; }
+.stat-card:nth-child(1){transition-delay:0.3s;} .stat-card:nth-child(2){transition-delay:0.5s;} .stat-card:nth-child(3){transition-delay:0.7s;}
+.stat-card .num { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; color:var(--orange); line-height:1; }
+.stat-card .desc { font-size:13px; color:var(--muted); margin-top:4px; font-weight:300; }
+#s2.active .left .label,#s2.active .left h2,#s2.active .left p,#s2.active .stat-card { opacity:1; transform:translateX(0); }
+
+/* ── SLIDE 3 SOLUTION ── */
+#s3 .inner { max-width:900px; width:90%; position:relative; z-index:2; text-align:center; }
+#s3 .label,#s3 h2,#s3 .pills,#s3 .big-statement { opacity:0; transition:all 0.7s ease; }
+#s3 .label { transition-delay:0.2s; }
+#s3 h2 { font-family:'Syne',sans-serif; font-size:clamp(32px,5vw,52px); font-weight:800; line-height:1.1; letter-spacing:-0.02em; transform:translateY(15px); transition-delay:0.4s; }
+#s3 .pills { display:flex; flex-wrap:wrap; gap:12px; margin-top:40px; justify-content:center; transform:translateY(10px); transition-delay:0.7s; }
+.pill { padding:10px 20px; background:var(--orange-dim); border:1px solid rgba(255,107,43,0.25); border-radius:100px; font-size:13px; font-weight:500; color:var(--white); }
+#s3 .big-statement { margin-top:36px; font-size:clamp(15px,2vw,19px); line-height:1.6; color:var(--muted); font-weight:300; transition-delay:1s; }
+#s3 .big-statement strong { color:var(--white); font-weight:500; }
+#s3.active .label,#s3.active h2,#s3.active .pills,#s3.active .big-statement { opacity:1; transform:translateY(0); }
+
+/* ── SLIDE 4 PERSONA ── */
+#s4 .inner { max-width:1000px; width:92%; position:relative; z-index:2; }
+#s4 .label,#s4 h2 { opacity:0; transition:all 0.7s ease; }
+#s4 .label { transition-delay:0.2s; }
+#s4 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:28px; transform:translateY(10px); transition-delay:0.35s; }
+.persona-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.persona-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px 24px; opacity:0; transform:translateY(16px); transition:all 0.6s ease; }
+.persona-card:nth-child(1){transition-delay:0.5s;} .persona-card:nth-child(2){transition-delay:0.7s;}
+.persona-card .p-name { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; color:var(--orange); margin-bottom:4px; }
+.persona-card .p-role { font-size:12px; color:var(--muted); margin-bottom:12px; letter-spacing:0.05em; }
+.persona-card .p-body { font-size:13px; line-height:1.65; color:var(--muted); font-weight:300; }
+.persona-card .p-loss { margin-top:12px; padding:10px 14px; background:rgba(255,107,43,0.08); border:1px solid rgba(255,107,43,0.2); border-radius:8px; font-size:13px; color:var(--white); }
+#s4.active .label,#s4.active h2,#s4.active .persona-card { opacity:1; transform:translateY(0); }
+#s4.active .label { transform:none; }
+</style>
+
+<style>
+/* ── SLIDE 5 SCENARIOS ── */
+#s5 .inner { max-width:1000px; width:92%; position:relative; z-index:2; }
+#s5 .label,#s5 h2 { opacity:0; transition:all 0.7s ease; }
+#s5 .label { transition-delay:0.2s; }
+#s5 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:28px; transform:translateY(10px); transition-delay:0.35s; }
+.scenario-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.scenario-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; opacity:0; transform:translateY(16px); transition:all 0.6s ease; }
+.scenario-card:nth-child(1){transition-delay:0.5s;} .scenario-card:nth-child(2){transition-delay:0.7s;} .scenario-card:nth-child(3){transition-delay:0.9s;}
+.scenario-card .sc-icon { font-size:28px; margin-bottom:10px; }
+.scenario-card .sc-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--orange); margin-bottom:6px; letter-spacing:0.03em; }
+.scenario-card .sc-loc { font-size:11px; color:var(--muted); margin-bottom:10px; letter-spacing:0.08em; text-transform:uppercase; }
+.scenario-card .sc-body { font-size:12.5px; line-height:1.6; color:var(--muted); font-weight:300; }
+.scenario-card .sc-payout { margin-top:12px; display:inline-block; padding:5px 12px; background:var(--orange-dim); border:1px solid rgba(255,107,43,0.3); border-radius:100px; font-family:'Syne',sans-serif; font-size:12px; font-weight:700; color:var(--orange); }
+#s5.active .label,#s5.active h2,#s5.active .scenario-card { opacity:1; transform:translateY(0); }
+#s5.active .label { transform:none; }
+
+/* ── SLIDE 6 WORKFLOW ── */
+#s6 .inner { max-width:1000px; width:90%; position:relative; z-index:2; }
+#s6 .label,#s6 h2 { opacity:0; transition:all 0.7s ease; }
+#s6 .label { transition-delay:0.2s; }
+#s6 h2 { font-family:'Syne',sans-serif; font-size:clamp(28px,4vw,44px); font-weight:800; letter-spacing:-0.02em; margin-bottom:40px; transform:translateY(10px); transition-delay:0.35s; }
+.flow { display:flex; align-items:center; gap:0; }
+.flow-step { flex:1; text-align:center; opacity:0; transform:translateY(16px); transition:all 0.5s ease; }
+.flow-step:nth-child(1){transition-delay:0.5s;} .flow-step:nth-child(3){transition-delay:0.7s;} .flow-step:nth-child(5){transition-delay:0.9s;} .flow-step:nth-child(7){transition-delay:1.1s;} .flow-step:nth-child(9){transition-delay:1.3s;}
+.flow-arrow { color:var(--orange); font-size:20px; flex-shrink:0; opacity:0; transition:all 0.4s ease; }
+.flow-arrow:nth-child(2){transition-delay:0.6s;} .flow-arrow:nth-child(4){transition-delay:0.8s;} .flow-arrow:nth-child(6){transition-delay:1.0s;} .flow-arrow:nth-child(8){transition-delay:1.2s;}
+.flow-icon { width:56px; height:56px; border-radius:14px; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 12px; }
+.flow-step.highlight .flow-icon { background:var(--orange-dim); border-color:rgba(255,107,43,0.4); }
+.flow-step .step-title { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; letter-spacing:0.05em; margin-bottom:4px; }
+.flow-step .step-desc { font-size:11px; color:var(--muted); line-height:1.4; }
+#s6.active .label,#s6.active h2,#s6.active .flow-step,#s6.active .flow-arrow { opacity:1; transform:translateY(0); }
+#s6.active .label { transform:none; }
+
+/* ── SLIDE 7 PREMIUM ── */
+#s7 .layout { display:grid; grid-template-columns:1fr 1fr; gap:60px; max-width:960px; width:90%; align-items:start; position:relative; z-index:2; }
+#s7 .left .label,#s7 .left h2,#s7 .left p { opacity:0; transition:all 0.7s ease; }
+#s7 .left .label { transition-delay:0.2s; }
+#s7 .left h2 { font-family:'Syne',sans-serif; font-size:clamp(28px,3.5vw,42px); font-weight:800; letter-spacing:-0.02em; line-height:1.1; transform:translateX(-15px); transition-delay:0.4s; }
+#s7 .left p { margin-top:14px; font-size:13.5px; color:var(--muted); line-height:1.7; font-weight:300; transition-delay:0.6s; }
+.adj-table { margin-top:18px; opacity:0; transition:all 0.7s 0.8s ease; }
+.adj-table .adj-title { font-family:'Syne',sans-serif; font-size:10px; letter-spacing:0.2em; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+.adj-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.adj-row:last-child { border-bottom:none; }
+.adj-row .adj-factor { color:var(--muted); }
+.adj-row .adj-val { font-family:'Syne',sans-serif; font-weight:700; color:var(--orange); font-size:12px; }
+.adj-row .adj-val.green { color:var(--green); }
+.tier-cards { display:flex; flex-direction:column; gap:12px; }
+.tier { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:var(--surface); border:1px solid var(--border); border-radius:12px; opacity:0; transform:translateX(20px); transition:all 0.6s ease; }
+.tier:nth-child(1){transition-delay:0.4s;} .tier:nth-child(2){transition-delay:0.6s; border-color:rgba(255,107,43,0.4); background:var(--orange-dim);} .tier:nth-child(3){transition-delay:0.8s;}
+.tier .tier-name { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; }
+.tier .tier-price { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; color:var(--orange); }
+.tier .tier-payout { font-size:12px; color:var(--muted); }
+#s7.active .left .label,#s7.active .left h2,#s7.active .left p,#s7.active .adj-table,#s7.active .tier { opacity:1; transform:translateX(0); }
+</style>
+
+<style>
+/* ── SLIDE 8 TRIGGERS ── */
+#s8 .inner { max-width:1000px; width:92%; position:relative; z-index:2; }
+#s8 .label,#s8 h2 { opacity:0; transition:all 0.7s ease; }
+#s8 .label { transition-delay:0.2s; }
+#s8 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:28px; transform:translateY(10px); transition-delay:0.35s; }
+.trigger-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+.trigger-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:18px 14px; text-align:center; opacity:0; transform:translateY(14px); transition:all 0.5s ease; }
+.trigger-card:nth-child(1){transition-delay:0.5s;} .trigger-card:nth-child(2){transition-delay:0.65s;} .trigger-card:nth-child(3){transition-delay:0.8s;} .trigger-card:nth-child(4){transition-delay:0.95s;} .trigger-card:nth-child(5){transition-delay:1.1s;}
+.trigger-card .t-icon { font-size:26px; margin-bottom:10px; }
+.trigger-card .t-name { font-family:'Syne',sans-serif; font-size:11px; font-weight:700; color:var(--white); margin-bottom:6px; line-height:1.3; }
+.trigger-card .t-source { font-size:10px; color:var(--muted); margin-bottom:8px; }
+.trigger-card .t-threshold { font-size:11px; color:var(--orange); font-weight:500; line-height:1.4; }
+.trigger-note { margin-top:20px; padding:14px 18px; background:var(--surface); border:1px solid var(--border); border-radius:10px; font-size:13px; color:var(--muted); line-height:1.6; opacity:0; transition:all 0.7s 1.2s ease; }
+.trigger-note strong { color:var(--white); }
+#s8.active .label,#s8.active h2,#s8.active .trigger-card,#s8.active .trigger-note { opacity:1; transform:translateY(0); }
+#s8.active .label { transform:none; }
+
+/* ── SLIDE 9 AI/ML ── */
+#s9 .layout { display:grid; grid-template-columns:1fr 1fr; gap:40px; max-width:1000px; width:92%; position:relative; z-index:2; }
+#s9 .label,#s9 h2 { opacity:0; transition:all 0.7s ease; }
+#s9 .label { transition-delay:0.2s; }
+#s9 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:24px; transform:translateY(10px); transition-delay:0.35s; grid-column:1/-1; }
+.ml-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; opacity:0; transform:translateY(16px); transition:all 0.6s ease; }
+.ml-card:nth-child(3){transition-delay:0.5s;} .ml-card:nth-child(4){transition-delay:0.7s;} .ml-card:nth-child(5){transition-delay:0.9s; grid-column:1/-1;}
+.ml-card .ml-badge { display:inline-block; padding:3px 10px; background:var(--orange-dim); border:1px solid rgba(255,107,43,0.3); border-radius:100px; font-size:10px; font-family:'Syne',sans-serif; font-weight:700; color:var(--orange); letter-spacing:0.08em; margin-bottom:10px; }
+.ml-card .ml-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:8px; }
+.ml-card .ml-model { font-size:11px; color:var(--orange); margin-bottom:10px; font-weight:500; }
+.ml-card .ml-body { font-size:12.5px; line-height:1.65; color:var(--muted); font-weight:300; }
+.ml-card .ml-inputs { display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.ml-chip { padding:4px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:100px; font-size:11px; color:var(--muted); }
+#s9.active .label,#s9.active h2,#s9.active .ml-card { opacity:1; transform:translateY(0); }
+#s9.active .label { transform:none; }
+
+/* ── SLIDE 10 FRAUD ── */
+#s10 .inner { max-width:960px; width:90%; position:relative; z-index:2; }
+#s10 .label,#s10 h2 { opacity:0; transition:all 0.7s ease; }
+#s10 .label { transition-delay:0.2s; }
+#s10 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:28px; transform:translateY(10px); transition-delay:0.35s; }
+.signals-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.signal { padding:14px; background:var(--surface); border:1px solid var(--border); border-radius:10px; opacity:0; transform:translateY(12px); transition:all 0.5s ease; }
+.signal:nth-child(1){transition-delay:0.5s;} .signal:nth-child(2){transition-delay:0.62s;} .signal:nth-child(3){transition-delay:0.74s;} .signal:nth-child(4){transition-delay:0.86s;} .signal:nth-child(5){transition-delay:0.98s;} .signal:nth-child(6){transition-delay:1.1s;} .signal:nth-child(7){transition-delay:1.22s;}
+.signal-icon { font-size:18px; margin-bottom:6px; }
+.signal-name { font-family:'Syne',sans-serif; font-size:10.5px; font-weight:700; line-height:1.3; letter-spacing:0.02em; }
+.signal-desc { font-size:10px; color:var(--muted); margin-top:4px; line-height:1.4; }
+.bcs-section { margin-top:18px; opacity:0; transition:all 0.7s 1.4s ease; }
+.bcs-tiers { display:flex; gap:10px; margin-bottom:12px; }
+.bcs-tier { flex:1; padding:10px 14px; border-radius:10px; border:1px solid var(--border); }
+.bcs-tier.green { background:rgba(34,197,94,0.08); border-color:rgba(34,197,94,0.3); }
+.bcs-tier.yellow { background:rgba(234,179,8,0.08); border-color:rgba(234,179,8,0.3); }
+.bcs-tier.red { background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3); }
+.bcs-tier .bt-range { font-family:'Syne',sans-serif; font-size:13px; font-weight:800; }
+.bcs-tier.green .bt-range { color:var(--green); }
+.bcs-tier.yellow .bt-range { color:var(--yellow); }
+.bcs-tier.red .bt-range { color:var(--red); }
+.bcs-tier .bt-label { font-size:11px; color:var(--muted); margin-top:2px; }
+.bcs-bar { display:flex; align-items:center; gap:14px; }
+.bcs-track { flex:1; height:7px; background:var(--surface); border-radius:100px; overflow:hidden; border:1px solid var(--border); }
+.bcs-fill { height:100%; width:0; background:linear-gradient(90deg,#ff6b2b,#ff9a5c); border-radius:100px; transition:width 1.5s 1.8s ease; }
+.bcs-label { font-family:'Syne',sans-serif; font-size:11px; color:var(--muted); white-space:nowrap; }
+#s10.active .label,#s10.active h2,#s10.active .signal,#s10.active .bcs-section { opacity:1; transform:translateY(0); }
+#s10.active .label { transform:none; }
+#s10.active .bcs-fill { width:72%; }
+</style>
+
+<style>
+/* ── SLIDE 11 TECH STACK ── */
+#s11 .layout { display:grid; grid-template-columns:1fr 1.4fr; gap:60px; max-width:1000px; width:92%; align-items:start; position:relative; z-index:2; }
+#s11 .left .label,#s11 .left h2,#s11 .left p { opacity:0; transition:all 0.7s ease; }
+#s11 .left .label { transition-delay:0.2s; }
+#s11 .left h2 { font-family:'Syne',sans-serif; font-size:clamp(28px,3.5vw,42px); font-weight:800; letter-spacing:-0.02em; line-height:1.1; transform:translateX(-15px); transition-delay:0.4s; }
+#s11 .left p { margin-top:14px; font-size:13px; color:var(--muted); line-height:1.7; font-weight:300; transition-delay:0.6s; }
+.stack-section { margin-bottom:16px; opacity:0; transform:translateX(20px); transition:all 0.6s ease; }
+.stack-section:nth-child(1){transition-delay:0.3s;} .stack-section:nth-child(2){transition-delay:0.5s;} .stack-section:nth-child(3){transition-delay:0.7s;} .stack-section:nth-child(4){transition-delay:0.9s;}
+.stack-section-title { font-family:'Syne',sans-serif; font-size:10px; letter-spacing:0.2em; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+.stack-rows { display:flex; flex-direction:column; gap:6px; }
+.stack-row { display:flex; align-items:center; gap:12px; padding:8px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+.stack-dot { width:7px; height:7px; border-radius:50%; background:var(--orange); flex-shrink:0; }
+.stack-tech { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; color:var(--white); }
+.stack-role { font-size:11px; color:var(--muted); margin-left:auto; }
+#s11.active .left .label,#s11.active .left h2,#s11.active .left p,#s11.active .stack-section { opacity:1; transform:translateX(0); }
+
+/* ── SLIDE 12 ROADMAP ── */
+#s12 .inner { max-width:960px; width:92%; position:relative; z-index:2; }
+#s12 .label,#s12 h2 { opacity:0; transition:all 0.7s ease; }
+#s12 .label { transition-delay:0.2s; }
+#s12 h2 { font-family:'Syne',sans-serif; font-size:clamp(26px,3.5vw,40px); font-weight:800; letter-spacing:-0.02em; margin-bottom:28px; transform:translateY(10px); transition-delay:0.35s; }
+.phase-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.phase-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:22px; opacity:0; transform:translateY(16px); transition:all 0.6s ease; }
+.phase-card:nth-child(1){transition-delay:0.5s;} .phase-card:nth-child(2){transition-delay:0.7s; border-color:rgba(255,107,43,0.35);} .phase-card:nth-child(3){transition-delay:0.9s;}
+.phase-card .ph-num { font-family:'Syne',sans-serif; font-size:11px; letter-spacing:0.2em; color:var(--orange); text-transform:uppercase; margin-bottom:6px; }
+.phase-card .ph-title { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:4px; }
+.phase-card .ph-dates { font-size:11px; color:var(--muted); margin-bottom:14px; }
+.phase-card .ph-items { list-style:none; display:flex; flex-direction:column; gap:6px; }
+.phase-card .ph-items li { font-size:12px; color:var(--muted); line-height:1.4; padding-left:14px; position:relative; }
+.phase-card .ph-items li::before { content:'→'; position:absolute; left:0; color:var(--orange); font-size:10px; top:1px; }
+.phase-card .ph-status { margin-top:14px; display:inline-block; padding:4px 12px; border-radius:100px; font-size:10px; font-family:'Syne',sans-serif; font-weight:700; letter-spacing:0.08em; }
+.ph-status.done { background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.3); color:var(--green); }
+.ph-status.active { background:var(--orange-dim); border:1px solid rgba(255,107,43,0.3); color:var(--orange); }
+.ph-status.upcoming { background:rgba(107,104,117,0.15); border:1px solid var(--border); color:var(--muted); }
+#s12.active .label,#s12.active h2,#s12.active .phase-card { opacity:1; transform:translateY(0); }
+#s12.active .label { transform:none; }
+
+/* ── SLIDE 13 END ── */
+#s13 .inner { text-align:center; position:relative; z-index:2; }
+#s13 .big { font-family:'Syne',sans-serif; font-size:clamp(48px,8vw,96px); font-weight:800; line-height:0.95; letter-spacing:-0.03em; opacity:0; transform:scale(0.95); transition:all 0.8s 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+#s13 .big em { font-style:normal; color:var(--orange); }
+#s13 .tagline { margin-top:24px; font-size:18px; color:var(--muted); font-weight:300; opacity:0; transition:all 0.7s 0.7s ease; }
+#s13 .team { margin-top:40px; font-family:'Syne',sans-serif; font-size:12px; letter-spacing:0.2em; color:var(--muted); text-transform:uppercase; opacity:0; transition:all 0.7s 1s ease; }
+#s13 .team strong { color:var(--orange); }
+#s13 .hackathon { margin-top:16px; font-size:11px; color:var(--muted); opacity:0; transition:all 0.7s 1.2s ease; letter-spacing:0.1em; }
+#s13.active .big,#s13.active .tagline,#s13.active .team,#s13.active .hackathon { opacity:1; transform:scale(1); }
+
+/* ── NAV ── */
+#dots { position:fixed; bottom:28px; left:50%; transform:translateX(-50%); display:flex; gap:6px; z-index:100; }
+.dot { width:5px; height:5px; border-radius:50%; background:var(--muted); cursor:pointer; transition:all 0.3s ease; }
+.dot.active { background:var(--orange); width:18px; border-radius:3px; box-shadow:0 0 8px var(--orange-glow); }
+#controls { position:fixed; bottom:56px; right:32px; display:flex; gap:10px; z-index:100; }
+.btn { width:36px; height:36px; border-radius:8px; background:var(--surface); border:1px solid var(--border); color:var(--muted); font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s ease; }
+.btn:hover { border-color:var(--orange); color:var(--orange); }
+</style>
+
 </head>
 <body>
 
 <div id="progress-bar"></div>
-<div id="counter">SLIDE <span id="cur">1</span> / 8</div>
+<div id="counter">SLIDE <span id="cur">1</span> / <span id="total">13</span></div>
 
 <!-- SLIDE 1 — TITLE -->
 <div class="slide active" id="s1">
@@ -779,21 +287,22 @@
   <div class="layout">
     <div class="left">
       <div class="label">The Problem</div>
-      <h2>Workers lose. Nobody pays.</h2>
-      <p>When floods hit, curfews are declared, or platforms shut down — India's 12 million delivery workers absorb the full income loss alone. No platform compensates them. No insurer serves them.</p>
+      <h2>Workers lose.<br>Nobody pays.</h2>
+      <p>India's 12 million gig delivery workers earn ₹15,000–₹30,000/month. When cyclones, floods, or curfews hit — platforms don't compensate. Insurers don't serve them. They absorb every rupee of loss alone.</p>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted);font-weight:300;line-height:1.6;">GigShield covers lost income only. Health, accident, vehicle, and life coverage are strictly excluded. One purpose. Done well.</p>
     </div>
     <div class="right">
       <div class="stat-card">
         <div class="num">₹2,800</div>
-        <div class="desc">Lost by one worker in 4 flood days — zero recourse</div>
+        <div class="desc">Lost by one worker in 4 flood days — zero recourse from any platform or insurer</div>
       </div>
       <div class="stat-card">
         <div class="num">20–30%</div>
-        <div class="desc">Monthly income lost during disruption events</div>
+        <div class="desc">Monthly income loss during disruption events in high-exposure metro zones</div>
       </div>
       <div class="stat-card">
-        <div class="num">₹0</div>
-        <div class="desc">Compensation received from any platform or insurer</div>
+        <div class="num">12M+</div>
+        <div class="desc">Gig delivery workers in India with no income safety net whatsoever</div>
       </div>
     </div>
   </div>
@@ -813,82 +322,149 @@
       <div class="pill">UPI Payout in &lt;2 Hours</div>
       <div class="pill">No Claim Forms</div>
       <div class="pill">Multi-Layer Fraud Defense</div>
+      <div class="pill">PWA — No App Install</div>
+      <div class="pill">SMS Notifications</div>
     </div>
     <div class="big-statement">
-      When a disruption hits, GigShield detects it, validates it, and <strong>pays the worker automatically</strong> — before they even pick up their phone.
+      When a disruption hits, GigShield detects it, validates it across 3+ independent sources, and <strong>pays the worker automatically</strong> — before they even pick up their phone.
     </div>
   </div>
 </div>
 
-<!-- SLIDE 4 — WORKFLOW -->
+<!-- SLIDE 4 — PERSONAS -->
 <div class="slide" id="s4">
   <div class="grid-bg"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);bottom:10%;right:5%"></div>
   <div class="inner">
-    <div class="label">How It Works</div>
+    <div class="label">Who We Protect</div>
+    <h2>Real workers. Real losses.</h2>
+    <div class="persona-grid">
+      <div class="persona-card">
+        <div class="p-name">Raju, 28</div>
+        <div class="p-role">Amazon Flex Partner · Bengaluru, HSR Layout</div>
+        <div class="p-body">Earns ~₹4,200/week working 6 days, 9 AM–9 PM. Operates within a 10 km zone around HSR Layout. Budget Android phone, shared flat, zero financial buffer beyond one week of earnings. Primary risk: waterlogged access roads cutting him off from his warehouse.</div>
+        <div class="p-loss">July 2024 — 4 flood days → ₹2,800 lost. No explanation. No recourse.</div>
+      </div>
+      <div class="persona-card">
+        <div class="p-name">Priya, 32</div>
+        <div class="p-role">Flipkart Delivery Executive · Chennai, T. Nagar</div>
+        <div class="p-body">Works 5–6 days/week, averages ₹3,800. Chennai's cyclone season and intensifying heat waves are her primary disruption risks. When a cyclone advisory is issued, Flipkart suspends deliveries in her zone for 2–3 days at a stretch — compounding into a significant monthly shortfall every season.</div>
+        <div class="p-loss">Cyclone season → 2–3 lost days per event → ₹1,200–₹1,900 gone with no mechanism for recovery.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 — SCENARIOS -->
+<div class="slide" id="s5">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);top:10%;left:5%"></div>
+  <div class="inner">
+    <div class="label">Live Scenarios</div>
+    <h2>Three disruptions. Three auto-payouts.</h2>
+    <div class="scenario-grid">
+      <div class="scenario-card">
+        <div class="sc-icon">🌊</div>
+        <div class="sc-title">Flash Flood</div>
+        <div class="sc-loc">Bengaluru · HSR Layout · Monday 7 AM</div>
+        <div class="sc-body">IMD Red Alert: rainfall crosses 80 mm/hr. GigShield cross-validates across IMD, OpenWeatherMap, and NDMA. Raju was logged into Amazon Flex at 6:45 AM with an accepted batch. Claim auto-initiated. SMS sent by 9 AM.</div>
+        <div class="sc-payout">₹700 queued → UPI in 2 hrs</div>
+      </div>
+      <div class="scenario-card">
+        <div class="sc-icon">🚧</div>
+        <div class="sc-title">Section 144 Curfew</div>
+        <div class="sc-loc">Chennai · T. Nagar · 11 AM</div>
+        <div class="sc-body">Local protest escalates. Authorities declare Section 144. Flipkart suspends deliveries. GigShield's NLP civic feed detects the curfew and cross-validates against the simulated Flipkart halt signal. Priya's policy is active.</div>
+        <div class="sc-payout">₹475 half-day payout → queued</div>
+      </div>
+      <div class="scenario-card">
+        <div class="sc-icon">🌡️</div>
+        <div class="sc-title">Extreme Heat Wave</div>
+        <div class="sc-loc">Hyderabad · All Zones</div>
+        <div class="sc-body">IMD advisory: 46°C with public health alert. E-commerce platforms voluntarily pause mandatory outdoor delivery shifts. GigShield detects the advisory threshold breach and auto-initiates claims for all active policy holders in affected zones.</div>
+        <div class="sc-payout">All active holders → auto-claim</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 — WORKFLOW -->
+<div class="slide" id="s6">
+  <div class="grid-bg"></div>
+  <div class="inner">
+    <div class="label">Application Workflow</div>
     <h2>Five stages. Zero worker effort after signup.</h2>
     <div class="flow">
       <div class="flow-step">
         <div class="flow-icon">📋</div>
         <div class="step-title">ENROLL</div>
-        <div class="step-desc">Phone OTP + zone + UPI link</div>
+        <div class="step-desc">Phone OTP · Aadhaar-lite KYC · Zone + UPI link</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-icon">🛡️</div>
         <div class="step-title">COVER</div>
-        <div class="step-desc">Weekly policy activates Monday</div>
+        <div class="step-desc">Weekly policy Mon–Sun · AI premium quote</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step highlight">
         <div class="flow-icon">⚡</div>
         <div class="step-title">DETECT</div>
-        <div class="step-desc">AI monitors zone triggers 24/7</div>
+        <div class="step-desc">AI monitors zone triggers 24/7 continuously</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-icon">✅</div>
         <div class="step-title">VALIDATE</div>
-        <div class="step-desc">3+ sources cross-checked</div>
+        <div class="step-desc">3+ sources cross-checked · BCS fraud score</div>
       </div>
       <div class="flow-arrow">→</div>
       <div class="flow-step">
         <div class="flow-icon">💸</div>
         <div class="step-title">PAY</div>
-        <div class="step-desc">UPI payout under 2 hours</div>
+        <div class="step-desc">Razorpay UPI · SMS confirm · Dashboard update</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- SLIDE 5 — PREMIUM -->
-<div class="slide" id="s5">
+<!-- SLIDE 7 — PREMIUM MODEL -->
+<div class="slide" id="s7">
   <div class="grid-bg"></div>
   <div class="glow" style="width:350px;height:350px;background:rgba(255,107,43,0.07);bottom:0;right:10%"></div>
   <div class="layout">
     <div class="left">
       <div class="label">Weekly Premium Model</div>
       <h2>Priced for how workers actually live.</h2>
-      <p>Coverage activates every Monday, expires Sunday. AI adjusts your rate weekly based on zone risk, season, and claim history. Fully transparent before renewal.</p>
+      <p>Coverage activates every Monday, expires Sunday, renews automatically. AI adjusts your rate weekly based on zone risk, season, and claim history — shown transparently before renewal.</p>
+      <div class="adj-table">
+        <div class="adj-title">AI Weekly Adjustments</div>
+        <div class="adj-row"><span class="adj-factor">Zone flood/weather risk</span><span class="adj-val">+₹5–₹20</span></div>
+        <div class="adj-row"><span class="adj-factor">Seasonal risk index</span><span class="adj-val">+₹2–₹10</span></div>
+        <div class="adj-row"><span class="adj-factor">Worker claim frequency</span><span class="adj-val">+₹2–₹8</span></div>
+        <div class="adj-row"><span class="adj-factor">Platform risk profile</span><span class="adj-val">+₹1–₹5</span></div>
+        <div class="adj-row"><span class="adj-factor">Loyalty (4 clean weeks)</span><span class="adj-val green">−₹6</span></div>
+      </div>
     </div>
     <div class="tier-cards">
       <div class="tier">
         <div>
           <div class="tier-name">Basic Shield</div>
-          <div class="tier-payout">Up to ₹1,000 / week</div>
+          <div class="tier-payout">Up to ₹1,000 / week · New workers, low-risk zones</div>
         </div>
         <div class="tier-price">₹29<span style="font-size:13px;color:var(--muted)">/wk</span></div>
       </div>
       <div class="tier">
         <div>
           <div class="tier-name">Standard Shield</div>
-          <div class="tier-payout">Up to ₹2,500 / week</div>
+          <div class="tier-payout">Up to ₹2,500 / week · Most metro-zone workers</div>
         </div>
         <div class="tier-price">₹59<span style="font-size:13px;color:var(--muted)">/wk</span></div>
       </div>
       <div class="tier">
         <div>
           <div class="tier-name">Pro Shield</div>
-          <div class="tier-payout">Up to ₹5,000 / week</div>
+          <div class="tier-payout">Up to ₹5,000 / week · High earners, high-exposure</div>
         </div>
         <div class="tier-price">₹99<span style="font-size:13px;color:var(--muted)">/wk</span></div>
       </div>
@@ -896,206 +472,84 @@
   </div>
 </div>
 
-<!-- SLIDE 6 — FRAUD -->
-<div class="slide" id="s6">
-  <div class="grid-bg"></div>
-  <div class="inner">
-    <div class="label">Adversarial Defense</div>
-    <h2>Behavioral Coherence Score — 7 signals. One verdict.</h2>
-    <div class="signals-grid">
-      <div class="signal">
-        <div class="signal-icon">📱</div>
-        <div class="signal-name">Platform Session Activity</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">🗺️</div>
-        <div class="signal-name">Route Coherence</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">📡</div>
-        <div class="signal-name">Network Triangulation</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">📍</div>
-        <div class="signal-name">Historical Zone Presence</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">🔒</div>
-        <div class="signal-name">Device Integrity Check</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">🚦</div>
-        <div class="signal-name">Platform Halt Confirm</div>
-      </div>
-      <div class="signal">
-        <div class="signal-icon">📳</div>
-        <div class="signal-name">Accelerometer Consistency</div>
-      </div>
-    </div>
-    <div class="bcs-bar">
-      <div class="bcs-label">BCS Score</div>
-      <div class="bcs-track"><div class="bcs-fill"></div></div>
-      <div class="bcs-label" style="color:var(--orange)">72 / 100 — Auto Approved</div>
-    </div>
-  </div>
-</div>
-
-<!-- SLIDE 7 — TECH STACK -->
-<div class="slide" id="s7">
-  <div class="grid-bg"></div>
-  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);top:20%;right:5%"></div>
-  <div class="layout">
-    <div class="left">
-      <div class="label">Tech Stack</div>
-      <h2>Built to scale from day one.</h2>
-    </div>
-    <div class="stack-list">
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">Next.js 14 + Tailwind</div>
-        <div class="stack-role">Frontend PWA</div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">Node.js + Express</div>
-        <div class="stack-role">API Layer</div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">Python + FastAPI</div>
-        <div class="stack-role">ML Microservice</div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">Supabase + Firebase</div>
-        <div class="stack-role">DB + Auth + Realtime</div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">XGBoost + Isolation Forest</div>
-        <div class="stack-role">Risk + Fraud Models</div>
-      </div>
-      <div class="stack-row">
-        <div class="stack-dot"></div>
-        <div class="stack-tech">Razorpay Test Mode</div>
-        <div class="stack-role">Payment Sandbox</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- SLIDE 8 — END -->
+<!-- SLIDE 8 — PARAMETRIC TRIGGERS -->
 <div class="slide" id="s8">
   <div class="grid-bg"></div>
-  <div class="glow" style="width:700px;height:700px;background:rgba(255,107,43,0.09);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);top:50%;left:50%;transform:translate(-50%,-50%)"></div>
   <div class="inner">
-    <div class="big">Protecting<br>the <em>Last Mile.</em></div>
-    <div class="tagline">No forms. No calls. Just wages — when workers need them most.</div>
-    <div class="team">Team JOD &nbsp;·&nbsp; <strong>Sumant Yadav</strong> &nbsp;·&nbsp; <strong>Mausumi Ghadei</strong> &nbsp;·&nbsp; <strong>Sameer Mahato</strong></div>
+    <div class="label">Parametric Triggers</div>
+    <h2>Objective events. Automatic claims. No forms.</h2>
+    <div class="trigger-grid">
+      <div class="trigger-card">
+        <div class="t-icon">🌧️</div>
+        <div class="t-name">Heavy Rainfall</div>
+        <div class="t-source">IMD / OpenWeatherMap</div>
+        <div class="t-threshold">&gt; 64.5 mm/hr in delivery zone</div>
+      </div>
+      <div class="trigger-card">
+        <div class="t-icon">🌡️</div>
+        <div class="t-name">Extreme Heat Wave</div>
+        <div class="t-source">IMD API</div>
+        <div class="t-threshold">&gt; 45°C + official IMD advisory</div>
+      </div>
+      <div class="trigger-card">
+        <div class="t-icon">🌊</div>
+        <div class="t-name">Severe Flood Warning</div>
+        <div class="t-source">IMD / NDMA (mock)</div>
+        <div class="t-threshold">Red flood alert for worker's district</div>
+      </div>
+      <div class="trigger-card">
+        <div class="t-icon">🚧</div>
+        <div class="t-name">Civic Curfew / Sec 144</div>
+        <div class="t-source">Municipal API + NLP feed</div>
+        <div class="t-threshold">Official curfew in delivery zone</div>
+      </div>
+      <div class="trigger-card">
+        <div class="t-icon">📦</div>
+        <div class="t-name">Platform Delivery Halt</div>
+        <div class="t-source">Simulated Platform API</div>
+        <div class="t-threshold">Platform suspends zone &gt; 3 hours</div>
+      </div>
+    </div>
+    <div class="trigger-note">
+      All triggers are <strong>zone-specific</strong>. An event in Chennai has zero effect on a policy holder in Pune. Workers are matched to triggers by their registered delivery zones set at onboarding. Every claim is initiated by an <strong>objective, measurable external event</strong> — the worker never files manually.
+    </div>
   </div>
 </div>
 
-<!-- NAV -->
-<div id="dots"></div>
-<div id="controls">
-  <button class="btn" id="prev">‹</button>
-  <button class="btn" id="playBtn">⏸</button>
-  <button class="btn" id="next">›</button>
+<!-- SLIDE 9 — AI & ML -->
+<div class="slide" id="s9">
+  <div class="grid-bg"></div>
+  <div class="glow" style="width:400px;height:400px;background:rgba(255,107,43,0.06);bottom:5%;right:5%"></div>
+  <div class="layout">
+    <div class="label" style="grid-column:1/-1;opacity:0;transition:all 0.7s 0.2s ease;">AI &amp; ML Integration</div>
+    <h2 style="grid-column:1/-1;opacity:0;transform:translateY(10px);transition:all 0.7s 0.35s ease;">Three models. One intelligent platform.</h2>
+    <div class="ml-card">
+      <div class="ml-badge">RISK ENGINE</div>
+      <div class="ml-title">XGBoost Regression</div>
+      <div class="ml-model">Gradient Boosted · Retrained quarterly</div>
+      <div class="ml-body">Trained on 3 years of IMD historical weather, NDMA disaster logs, and 10,000 synthetic gig worker policies across 6 metro zones. Outputs a weekly risk multiplier before each Monday renewal.</div>
+      <div class="ml-inputs">
+        <span class="ml-chip">Zone history</span><span class="ml-chip">Disruption frequency</span><span class="ml-chip">Season</span><span class="ml-chip">Claim history</span><span class="ml-chip">Platform</span>
+      </div>
+    </div>
+    <div class="ml-card">
+      <div class="ml-badge">FRAUD ENGINE</div>
+      <div class="ml-title">Isolation Forest + Rules</div>
+      <div class="ml-model">Anomaly Detection · Hard rule layer</div>
+      <div class="ml-body">Trained on synthetic behavioural patterns for both legitimate claims and known spoofing patterns. Produces an anomaly score feeding into the BCS. Rule layer handles device fingerprinting, GPS impossibility, and platform halt confirmation independently.</div>
+      <div class="ml-inputs">
+        <span class="ml-chip">Device fingerprint</span><span class="ml-chip">GPS trace</span><span class="ml-chip">Platform session</span><span class="ml-chip">Motion data</span>
+      </div>
+    </div>
+    <div class="ml-card">
+      <div class="ml-badge">NLP CIVIC FEED</div>
+      <div class="ml-title">DistilBERT Classifier</div>
+      <div class="ml-model">Fine-tuned · Geocoded to delivery zones</div>
+      <div class="ml-body">Monitors aggregated public news feeds and civic announcement channels for curfews, large-scale strikes, and market closures. Detected events are geocoded against delivery zone boundaries and fed into the trigger engine. All feeds mocked in Phase 1.</div>
+      <div class="ml-inputs">
+        <span class="ml-chip">News feeds</span><span class="ml-chip">Civic announcements</span><span class="ml-chip">Zone geocoding</span>
+      </div>
+    </div>
+  </div>
 </div>
-
-<script>
-  const slides = document.querySelectorAll('.slide');
-  const dotsEl = document.getElementById('dots');
-  const curEl = document.getElementById('cur');
-  const progressBar = document.getElementById('progress-bar');
-  const DURATIONS = [5000, 5500, 5000, 6000, 5500, 6500, 5000, 5000];
-
-  let current = 0;
-  let playing = true;
-  let timer = null;
-  let progressStart = null;
-  let progressRAF = null;
-
-  // Build dots
-  slides.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'dot' + (i === 0 ? ' active' : '');
-    d.addEventListener('click', () => goTo(i));
-    dotsEl.appendChild(d);
-  });
-
-  function getDots() { return document.querySelectorAll('.dot'); }
-
-  function goTo(idx) {
-    clearTimer();
-    slides[current].classList.remove('active');
-    slides[current].classList.add('exit');
-    setTimeout(() => slides[current - (current === idx ? 0 : 0)].classList.remove('exit'), 600);
-
-    const prev = current;
-    current = idx;
-
-    slides[prev].classList.remove('active');
-    setTimeout(() => slides[prev].classList.remove('exit'), 650);
-    slides[current].classList.add('active');
-
-    curEl.textContent = current + 1;
-    getDots().forEach((d, i) => d.classList.toggle('active', i === current));
-
-    if (playing) startTimer();
-  }
-
-  function next() { goTo((current + 1) % slides.length); }
-  function prev() { goTo((current - 1 + slides.length) % slides.length); }
-
-  function startTimer() {
-    clearTimer();
-    const dur = DURATIONS[current];
-    progressStart = performance.now();
-
-    function tick(now) {
-      const elapsed = now - progressStart;
-      const pct = Math.min((elapsed / dur) * 100, 100);
-      const totalPct = ((current / slides.length) + (pct / 100 / slides.length)) * 100;
-      progressBar.style.width = totalPct + '%';
-      if (elapsed < dur) {
-        progressRAF = requestAnimationFrame(tick);
-      }
-    }
-    progressRAF = requestAnimationFrame(tick);
-
-    timer = setTimeout(() => {
-      if (current < slides.length - 1) {
-        next();
-      } else {
-        progressBar.style.width = '100%';
-        playing = false;
-        document.getElementById('playBtn').textContent = '▶';
-      }
-    }, dur);
-  }
-
-  function clearTimer() {
-    clearTimeout(timer);
-    cancelAnimationFrame(progressRAF);
-  }
-
-  document.getElementById('next').addEventListener('click', next);
-  document.getElementById('prev').addEventListener('click', prev);
-  document.getElementById('playBtn').addEventListener('click', () => {
-    playing = !playing;
-    document.getElementById('playBtn').textContent = playing ? '⏸' : '▶';
-    if (playing) startTimer();
-    else clearTimer();
-  });
-
-  // Keyboard nav
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === ' ') next();
-    if (e.key === 'ArrowLeft') prev();
-  });
-
-  startTimer();
-</script>
-</body>
-</html>
