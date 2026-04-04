@@ -3,7 +3,6 @@ const Claim = require('../models/Claim');
 const Policy = require('../models/Policy');
 const Worker = require('../models/Worker');
 const { auth, adminAuth } = require('../middleware/auth');
-const { computeBCS } = require('../services/fraudEngine');
 const { simulatePayout } = require('../services/paymentService');
 
 // GET /api/claims  — worker's claims

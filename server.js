@@ -27,6 +27,10 @@ app.use('/api/forecasts', require('./routes/forecasts'));   // 48hr disruption p
 app.use('/api/income', require('./routes/income'));         // Multi-platform income aggregation
 app.use('/api/reports', require('./routes/reports'));       // Community fraud reporting
 
+// Phase 3 — Hackathon enhancements
+app.use('/api/insights', require('./routes/insights'));     // AI-powered personalized insights
+app.use('/api/voice', require('./routes/voice'));           // Voice-based verification
+
 app.get('/api/health', (req, res) => res.json({
   status: 'ok',
   time: new Date(),

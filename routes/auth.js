@@ -45,14 +45,13 @@ router.post('/verify-otp', async (req, res) => {
       upiId, weeklyEarnings: weeklyEarnings || 4200,
       kycVerified: true,
     });
-    isNew = true;
   } else {
     // Existing worker — just log in, consume OTP
     otpStore.delete(phone);
   }
 
   const token = jwt.sign({ id: worker._id, phone: worker.phone }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, worker, isNew: false }); // always false for existing workers
+  res.json({ token, worker });
 });
 
 // POST /api/auth/login (admin)
