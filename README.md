@@ -2,11 +2,11 @@
 
 > **Protecting 12M+ Indian gig workers with instant, automated insurance payouts**
 
-[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://your-deployed-url.com)
+[![Live Demo](https://img.shields.io/badge/demo-live-success)](https://gigshield-jvm8.onrender.com/login)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**🔗 Live Demo**: [https://your-deployed-url.com](https://your-deployed-url.com)  
-**📹 Video Demo**: [YouTube Link](https://youtube.com/your-demo)  
+**🔗 Live Demo**: [https://gigshield-jvm8.onrender.com/login](https://gigshield-jvm8.onrender.com/login)  
+**📹 Video Demo**: [Watch on Google Drive](https://drive.google.com/file/d/1fXXonI0ydKd-Y3WAcTc4eg-DmauGgU-F/view?usp=sharing)  
 **🏆 Built for**: Guidewire DEVTrails 2026 Hackathon
 
 ---
@@ -225,7 +225,7 @@ BLOCKCHAIN_PRIVATE_KEY=your_private_key
 
 ## 🎥 Demo Video
 
-Watch our 3-minute demo: [YouTube Link](https://youtube.com/your-demo)
+Watch our demo: [Google Drive](https://drive.google.com/file/d/1fXXonI0ydKd-Y3WAcTc4eg-DmauGgU-F/view?usp=sharing)
 
 ---
 
