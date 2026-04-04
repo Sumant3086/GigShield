@@ -31,8 +31,6 @@ router.post('/verify-otp', async (req, res) => {
     worker = await Worker.findOne({ phone: altPhone });
   }
 
-  let isNew = false;
-
   if (!worker) {
     // Genuinely new worker — if no registration details, show form (keep OTP alive)
     if (!name || !platform || !zone || !city || !upiId) {
@@ -50,18 +48,38 @@ router.post('/verify-otp', async (req, res) => {
     otpStore.delete(phone);
   }
 
-  const token = jwt.sign({ id: worker._id, phone: worker.phone }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  // Generate token with 30-day expiry for better UX
+  const token = jwt.sign({ id: worker._id, phone: worker.phone }, process.env.JWT_SECRET, { expiresIn: '30d' });
   res.json({ token, worker });
 });
 
 // POST /api/auth/login (admin)
 router.post('/admin-login', (req, res) => {
   const { username, password } = req.body;
-  if (username === 'admin' && password === 'gigshield2026') {
+  const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'gigshield2026';
+  
+  if (username === adminUsername && password === adminPassword) {
     const token = jwt.sign({ role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1d' });
     return res.json({ token, role: 'admin' });
   }
   res.status(401).json({ error: 'Invalid credentials' });
+});
+
+// GET /api/auth/verify-token - Check if token is still valid
+router.get('/verify-token', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ valid: false, error: 'No token' });
+  
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const worker = await Worker.findById(decoded.id);
+    if (!worker) return res.status(401).json({ valid: false, error: 'Worker not found' });
+    
+    res.json({ valid: true, worker });
+  } catch (error) {
+    res.status(401).json({ valid: false, error: 'Invalid or expired token' });
+  }
 });
 
 module.exports = router;

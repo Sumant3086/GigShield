@@ -60,13 +60,6 @@ export default function AdminLogin() {
                 placeholder="••••••••" onKeyDown={e => e.key==='Enter' && login()} className="input-base" />
             </div>
 
-            <div className="p-3 rounded-xl text-xs" style={{ background:'rgba(124,58,237,0.08)', border:'1px solid rgba(124,58,237,0.2)' }}>
-              <span style={{ color:'#4a5080' }}>Demo: </span>
-              <span style={{ color:'#a78bfa', fontFamily:'Space Mono,monospace' }}>admin</span>
-              <span style={{ color:'#4a5080' }}> / </span>
-              <span style={{ color:'#a78bfa', fontFamily:'Space Mono,monospace' }}>gigshield2026</span>
-            </div>
-
             {error && (
               <motion.div initial={{ opacity:0, scale:0.95 }} animate={{ opacity:1, scale:1 }}
                 className="flex items-center gap-2 p-3 rounded-xl text-xs"

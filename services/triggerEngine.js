@@ -6,15 +6,6 @@ const { runFraudAnalysis } = require('./fraudEngine');
 const { simulatePayout } = require('./paymentService');
 const { TRIGGER_TYPES, CITIES, PAYOUT_MULTIPLIERS } = require('../config/constants');
 
-// Mock weather/civic data feeds
-const MOCK_FEEDS = [
-  { type: 'heavy_rainfall', city: 'Bengaluru', zone: 'HSR Layout', value: 72, unit: 'mm/hr', severity: 'red', description: 'IMD Red Alert: Heavy rainfall 72mm/hr in HSR Layout zone' },
-  { type: 'extreme_heat', city: 'Hyderabad', zone: 'Hitech City', value: 46, unit: '°C', severity: 'red', description: 'IMD Heat Wave Advisory: 46°C in Hyderabad' },
-  { type: 'flood_warning', city: 'Chennai', zone: 'Velachery', value: null, unit: null, severity: 'red', description: 'NDMA Red Flood Alert: Velachery district' },
-  { type: 'civic_curfew', city: 'Chennai', zone: 'T. Nagar', value: null, unit: null, severity: 'orange', description: 'Section 144 declared in T. Nagar zone' },
-  { type: 'platform_halt', city: 'Mumbai', zone: 'Andheri', value: null, unit: null, severity: 'red', description: 'Amazon Flex suspended operations in Andheri zone' },
-];
-
 const THRESHOLDS = {
   heavy_rainfall: 64.5,  // mm/hr
   extreme_heat: 45,       // °C
@@ -23,15 +14,11 @@ const THRESHOLDS = {
 async function runTriggerEngine() {
   console.log('[TriggerEngine] Running at', new Date().toISOString());
 
-  // If real OpenWeather key is set, fetch live weather for all cities
+  // Fetch live weather from OpenWeather API
   if (process.env.OPENWEATHER_API_KEY && process.env.OPENWEATHER_API_KEY !== 'mock_key') {
     await checkLiveWeather();
-  }
-
-  // Also randomly fire a mock event for demo purposes (30% chance)
-  if (Math.random() > 0.7) {
-    const feed = MOCK_FEEDS[Math.floor(Math.random() * MOCK_FEEDS.length)];
-    await simulateDisruption(feed);
+  } else {
+    console.log('[TriggerEngine] No OpenWeather API key configured. Skipping weather check.');
   }
 }
 

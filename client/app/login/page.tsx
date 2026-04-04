@@ -33,7 +33,16 @@ export default function LoginPage() {
   // Auto-redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem('gs_token')
-    if (token) router.replace('/dashboard')
+    if (token) {
+      // Verify token is still valid
+      api.get('/auth/verify-token').then(() => {
+        router.replace('/dashboard')
+      }).catch(() => {
+        // Token expired, clear it
+        localStorage.removeItem('gs_token')
+        localStorage.removeItem('gs_worker')
+      })
+    }
   }, [router])
 
   const steps: Step[] = ['phone', 'otp', 'register']
