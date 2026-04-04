@@ -23,16 +23,22 @@ router.post('/verify-otp', async (req, res) => {
     return res.status(400).json({ error: 'Invalid or expired OTP' });
   }
 
+  // Normalize phone — try both with and without +91 prefix
   let worker = await Worker.findOne({ phone });
+  if (!worker) {
+    // Try alternate format
+    const altPhone = phone.startsWith('+91') ? phone.slice(3) : `+91${phone}`;
+    worker = await Worker.findOne({ phone: altPhone });
+  }
+
   let isNew = false;
 
   if (!worker) {
-    // New worker — if registration details not provided yet, tell frontend to show form
-    // but DO NOT delete the OTP so the second call (with form data) still works
+    // Genuinely new worker — if no registration details, show form (keep OTP alive)
     if (!name || !platform || !zone || !city || !upiId) {
       return res.status(200).json({ needsRegistration: true });
     }
-    // All details provided — now consume the OTP and create the worker
+    // Registration details provided — create worker and consume OTP
     otpStore.delete(phone);
     worker = await Worker.create({
       phone, name, platform, zone, city,
@@ -41,12 +47,12 @@ router.post('/verify-otp', async (req, res) => {
     });
     isNew = true;
   } else {
-    // Existing worker — consume OTP and log in
+    // Existing worker — just log in, consume OTP
     otpStore.delete(phone);
   }
 
   const token = jwt.sign({ id: worker._id, phone: worker.phone }, process.env.JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, worker, isNew });
+  res.json({ token, worker, isNew: false }); // always false for existing workers
 });
 
 // POST /api/auth/login (admin)

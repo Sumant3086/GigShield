@@ -22,11 +22,53 @@ const THRESHOLDS = {
 
 async function runTriggerEngine() {
   console.log('[TriggerEngine] Running at', new Date().toISOString());
-  // In production: fetch from real IMD/OpenWeatherMap APIs
-  // For demo: randomly activate one mock feed occasionally
+
+  // If real OpenWeather key is set, fetch live weather for all cities
+  if (process.env.OPENWEATHER_API_KEY && process.env.OPENWEATHER_API_KEY !== 'mock_key') {
+    await checkLiveWeather();
+  }
+
+  // Also randomly fire a mock event for demo purposes (30% chance)
   if (Math.random() > 0.7) {
     const feed = MOCK_FEEDS[Math.floor(Math.random() * MOCK_FEEDS.length)];
     await simulateDisruption(feed);
+  }
+}
+
+// Fetch real weather from OpenWeatherMap and trigger if thresholds exceeded
+async function checkLiveWeather() {
+  const axios = require('axios');
+  const { CITIES } = require('../config/constants');
+  const cityCoords = {
+    Bengaluru: { lat: 12.9716, lon: 77.5946 },
+    Chennai:   { lat: 13.0827, lon: 80.2707 },
+    Hyderabad: { lat: 17.3850, lon: 78.4867 },
+    Mumbai:    { lat: 19.0760, lon: 72.8777 },
+    Delhi:     { lat: 28.6139, lon: 77.2090 },
+  };
+
+  for (const [city, coords] of Object.entries(cityCoords)) {
+    try {
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`;
+      const { data } = await axios.get(url);
+      const rain = data.rain?.['1h'] || 0;       // mm in last hour
+      const temp = data.main?.temp || 0;
+      const zones = Object.values(CITIES)[Object.keys(CITIES).indexOf(city)]?.zones || [];
+      const zone = zones[0];
+
+      // Heavy rainfall threshold: 64.5 mm/hr
+      if (rain >= 64.5) {
+        console.log(`[TriggerEngine] LIVE: Heavy rainfall ${rain}mm/hr in ${city}`);
+        await simulateDisruption({ type: 'heavy_rainfall', severity: rain >= 100 ? 'disaster' : 'red', zone, city, description: `IMD/OWM: Heavy rainfall ${rain.toFixed(1)}mm/hr detected in ${city}`, value: rain, unit: 'mm/hr' });
+      }
+      // Extreme heat threshold: 45°C
+      if (temp >= 45) {
+        console.log(`[TriggerEngine] LIVE: Extreme heat ${temp}°C in ${city}`);
+        await simulateDisruption({ type: 'extreme_heat', severity: 'red', zone, city, description: `IMD/OWM: Extreme heat ${temp.toFixed(1)}°C detected in ${city}`, value: temp, unit: '°C' });
+      }
+    } catch (e) {
+      console.warn(`[TriggerEngine] Weather fetch failed for ${city}:`, e.message);
+    }
   }
 }
 

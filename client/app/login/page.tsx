@@ -24,10 +24,17 @@ export default function LoginPage() {
   const [devOtp, setDevOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [workerName, setWorkerName] = useState('') // for returning users
   const [form, setForm] = useState({
     name: '', platform: 'amazon_flex', city: 'Bengaluru',
     zone: 'HSR Layout', upiId: '', weeklyEarnings: 4200,
   })
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('gs_token')
+    if (token) router.replace('/dashboard')
+  }, [router])
 
   const steps: Step[] = ['phone', 'otp', 'register']
   const stepIdx = steps.indexOf(step)
@@ -51,6 +58,8 @@ export default function LoginPage() {
     try {
       const { data } = await api.post('/auth/verify-otp', { phone: `+91${phone}`, otp })
       if (data.needsRegistration) { setStep('register'); setLoading(false); return }
+      // Existing worker — store and redirect
+      if (data.worker?.name) setWorkerName(data.worker.name)
       localStorage.setItem('gs_token', data.token)
       localStorage.setItem('gs_worker', JSON.stringify(data.worker))
       router.replace('/dashboard')
@@ -240,9 +249,14 @@ export default function LoginPage() {
               <motion.div key="otp"
                 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}>
-                <h2 className="text-3xl font-bold mb-1" style={{ color: '#e8eaf6' }}>Enter OTP</h2>
+                <h2 className="text-3xl font-bold mb-1" style={{ color: '#e8eaf6' }}>
+                  {workerName ? `Welcome back` : 'Enter OTP'}
+                </h2>
                 <p className="text-sm mb-8" style={{ color: '#4a5080' }}>
-                  Sent to <span style={{ color: '#e8eaf6' }}>+91 {phone}</span>
+                  {workerName
+                    ? <span>Signing in as <span style={{ color: '#00e5ff', fontWeight: 600 }}>{workerName}</span></span>
+                    : <span>Sent to <span style={{ color: '#e8eaf6' }}>+91 {phone}</span></span>
+                  }
                 </p>
                 {devOtp && (
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
