@@ -5,6 +5,9 @@ const Claim = require('../models/Claim');
 const { runFraudAnalysis } = require('./fraudEngine');
 const { simulatePayout } = require('./paymentService');
 const { TRIGGER_TYPES, CITIES, PAYOUT_MULTIPLIERS } = require('../config/constants');
+const { notifyClaimApproved } = require('./whatsappService');
+const { initiateVoiceVerification } = require('./voiceService');
+const { recordClaimOnChain } = require('./blockchainService');
 
 const THRESHOLDS = {
   heavy_rainfall: 64.5,  // mm/hr
@@ -118,9 +121,29 @@ async function simulateDisruption({ type, severity = 'red', zone, city, descript
       dataSources,
     });
 
+    // Phase 3: Record claim creation on blockchain
+    recordClaimOnChain(claim).catch(err =>
+      console.warn('[TriggerEngine] Blockchain recording failed:', err.message)
+    );
+
     // Auto-process based on BCS tier
     if (bcsResult.status === 'auto_approved') {
       await simulatePayout(claim);
+      
+      // Phase 3: Send WhatsApp notification for auto-approved claims
+      notifyClaimApproved(worker, claim).catch(err =>
+        console.warn('[TriggerEngine] WhatsApp notification failed:', err.message)
+      );
+    } else if (bcsResult.status === 'soft_hold') {
+      // Phase 3: Initiate voice verification for soft-hold claims
+      initiateVoiceVerification(worker, claim).catch(err =>
+        console.warn('[TriggerEngine] Voice verification failed:', err.message)
+      );
+      
+      // Also send WhatsApp notification
+      notifyClaimApproved(worker, claim).catch(err =>
+        console.warn('[TriggerEngine] WhatsApp notification failed:', err.message)
+      );
     }
 
     claimsCreated++;

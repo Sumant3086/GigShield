@@ -1,6 +1,7 @@
 const DisruptionForecast = require('../models/DisruptionForecast');
 const Worker = require('../models/Worker');
 const { CITIES, TRIGGER_TYPES, SEASONAL_RISK } = require('../config/constants');
+const { notifyForecastAlert } = require('./whatsappService');
 
 /**
  * 48-Hour Disruption Prediction Engine
@@ -101,7 +102,7 @@ async function runPredictionEngine() {
       const severity = confidence > 70 ? 'high' : confidence > 45 ? 'moderate' : 'low';
       const alts = ALTERNATIVE_ZONES[city]?.[zone] || [];
 
-      await DisruptionForecast.create({
+      const forecast = await DisruptionForecast.create({
         type, zone, city,
         forecastedFor,
         forecastedUntil: new Date(forecastedFor.getTime() + 6 * 60 * 60 * 1000),
@@ -113,6 +114,17 @@ async function runPredictionEngine() {
         isActive: true,
       });
       created++;
+
+      // Phase 3: Send WhatsApp forecast alerts to workers in this zone (high confidence only)
+      if (confidence >= 60) {
+        const workers = await Worker.find({ zone, city, phone: { $exists: true } }).limit(50);
+        for (const worker of workers) {
+          notifyForecastAlert(worker, forecast).catch(err =>
+            console.warn(`[PredictionEngine] WhatsApp alert failed for ${worker.phone}:`, err.message)
+          );
+        }
+        console.log(`[PredictionEngine] Sent ${workers.length} WhatsApp forecast alerts for ${type} in ${zone}`);
+      }
     }
   }
 

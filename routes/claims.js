@@ -4,6 +4,7 @@ const Policy = require('../models/Policy');
 const Worker = require('../models/Worker');
 const { auth, adminAuth } = require('../middleware/auth');
 const { simulatePayout } = require('../services/paymentService');
+const { recordClaimOnChain, verifyClaimOnChain, generateVerificationQR } = require('../services/blockchainService');
 
 // GET /api/claims  — worker's claims
 router.get('/', auth, async (req, res) => {
@@ -36,6 +37,12 @@ router.post('/confirm/:id', auth, async (req, res) => {
     }
     claim.status = 'approved';
     await claim.save();
+    
+    // Phase 3: Record status change on blockchain
+    recordClaimOnChain(claim).catch(err =>
+      console.warn('[Claims] Blockchain recording failed:', err.message)
+    );
+    
     // Trigger payout
     await simulatePayout(claim);
     res.json(claim);
@@ -70,6 +77,12 @@ router.put('/admin/:id/approve', adminAuth, async (req, res) => {
       { status: 'approved', reviewNote: req.body.note || 'Approved by admin' },
       { new: true }
     );
+    
+    // Phase 3: Record admin approval on blockchain
+    recordClaimOnChain(claim).catch(err =>
+      console.warn('[Claims] Blockchain recording failed:', err.message)
+    );
+    
     await simulatePayout(claim);
     res.json(claim);
   } catch (e) {
@@ -85,7 +98,28 @@ router.put('/admin/:id/reject', adminAuth, async (req, res) => {
       { status: 'rejected', reviewNote: req.body.note || 'Rejected by admin' },
       { new: true }
     );
+    
+    // Phase 3: Record rejection on blockchain
+    recordClaimOnChain(claim).catch(err =>
+      console.warn('[Claims] Blockchain recording failed:', err.message)
+    );
+    
     res.json(claim);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Phase 3: GET /api/claims/:id/verify-blockchain — verify claim on blockchain
+router.get('/:id/verify-blockchain', auth, async (req, res) => {
+  try {
+    const claim = await Claim.findOne({ _id: req.params.id, worker: req.user.id });
+    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    
+    const verification = await verifyClaimOnChain(claim._id);
+    const qr = generateVerificationQR(claim, verification.txHash || 'demo');
+    
+    res.json({ claim, verification, qr });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

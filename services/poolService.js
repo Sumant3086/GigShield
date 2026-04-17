@@ -2,6 +2,7 @@ const RiskPool = require('../models/RiskPool');
 const Worker = require('../models/Worker');
 const Policy = require('../models/Policy');
 const Claim = require('../models/Claim');
+const { notifyPoolDiscount } = require('./whatsappService');
 
 /**
  * Cooperative Risk Pool Service
@@ -94,11 +95,23 @@ async function getPoolStats(poolId) {
 
   const totalPremiums = premiums[0]?.total || 0;
   const totalPayouts = payouts[0]?.total || 0;
+  const previousHealthScore = pool.healthScore;
   pool.lossRatio = totalPremiums > 0 ? totalPayouts / totalPremiums : 0;
   pool.poolFund = totalPremiums;
   pool.totalPayouts = totalPayouts;
   pool.recalculate();
   await pool.save();
+
+  // Phase 3: Send WhatsApp notification if health score improved significantly
+  if (pool.healthScore >= 80 && previousHealthScore < 80) {
+    const workers = await Worker.find({ poolId: pool._id, phone: { $exists: true } }).limit(50);
+    for (const worker of workers) {
+      notifyPoolDiscount(worker, pool).catch(err =>
+        console.warn(`[PoolService] WhatsApp notification failed for ${worker.phone}:`, err.message)
+      );
+    }
+    console.log(`[PoolService] Sent ${workers.length} pool health notifications`);
+  }
 
   return {
     pool,

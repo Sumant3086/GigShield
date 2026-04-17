@@ -1,5 +1,7 @@
 const Claim = require('../models/Claim');
 const Policy = require('../models/Policy');
+const { notifyPaymentReceived } = require('./whatsappService');
+const { recordClaimOnChain } = require('./blockchainService');
 
 // Initialize Razorpay only if keys are present
 let razorpay = null;
@@ -61,11 +63,11 @@ async function simulatePayout(claim) {
       paymentRef = `GS_MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
     }
 
-    await Claim.findByIdAndUpdate(claim._id, {
+    const updatedClaim = await Claim.findByIdAndUpdate(claim._id, {
       status: 'paid',
       paymentRef,
       paidAt: new Date(),
-    });
+    }, { new: true });
 
     if (claim.policy) {
       await Policy.findByIdAndUpdate(claim.policy, {
@@ -74,6 +76,19 @@ async function simulatePayout(claim) {
     }
 
     console.log(`[Payment] Payout Rs.${amount} processed → ref: ${paymentRef}`);
+
+    // Phase 3: Send WhatsApp notification
+    if (worker) {
+      notifyPaymentReceived(worker, updatedClaim).catch(err => 
+        console.warn('[Payment] WhatsApp notification failed:', err.message)
+      );
+    }
+
+    // Phase 3: Record on blockchain
+    recordClaimOnChain(updatedClaim).catch(err =>
+      console.warn('[Payment] Blockchain recording failed:', err.message)
+    );
+
     return { success: true, paymentRef };
 
   } catch (e) {
